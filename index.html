@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drone & PID Lab — mô phỏng điều khiển drone bằng Python | @roboticsvn</title>
+<meta name="description" content="Bộ notebook Python mô phỏng PID, lọc Kalman, IMU, động cơ BLDC và quadcopter. Tải bài mẫu miễn phí.">
+<style>
+  :root { --bg:#0f1420; --card:#171e2e; --txt:#e8ecf3; --mut:#9aa6bd; --acc:#3fb5ff; --ok:#3ddc97; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--txt); }
+  main { max-width:720px; margin:0 auto; padding:20px 16px 48px; }
+  h1 { font-size:1.7rem; line-height:1.25; margin:.4em 0 .3em; }
+  h2 { font-size:1.2rem; margin:1.8em 0 .6em; }
+  .tag { color:var(--acc); font-weight:600; font-size:.9rem; }
+  .mut { color:var(--mut); }
+  .card { background:var(--card); border-radius:12px; padding:16px; margin:12px 0; }
+  ol.lessons { padding-left:1.3em; margin:0; }
+  ol.lessons li { margin:.45em 0; }
+  .free { color:var(--ok); font-size:.8rem; font-weight:700; margin-left:.3em; }
+  .price { font-size:2rem; font-weight:800; }
+  .old { text-decoration:line-through; color:var(--mut); margin-left:.4em; }
+  .btn { display:block; width:100%; padding:14px; border:0; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; text-align:center; text-decoration:none; }
+  .btn-free { background:var(--ok); color:#06261a; }
+  .btn-buy { background:var(--acc); color:#04223a; margin-top:12px; }
+  .btn[disabled] { opacity:.6; cursor:not-allowed; }
+  input[type=email], input[type=text] { width:100%; padding:12px; border-radius:8px; border:1px solid #2b3550; background:#0c111b; color:var(--txt); font-size:1rem; margin:6px 0 10px; }
+  label.chk { display:flex; gap:8px; font-size:.85rem; color:var(--mut); margin-bottom:12px; }
+  #msg, #msg-buy { margin-top:10px; font-size:.95rem; }
+  img { max-width:100%; border-radius:10px; }
+  details { margin:8px 0; } summary { cursor:pointer; font-weight:600; }
+  footer { margin-top:36px; font-size:.8rem; color:var(--mut); }
+  @media (min-width:640px){ h1{font-size:2.1rem;} }
+</style>
+</head>
+<body>
+<main>
+  <div class="tag">@roboticsvn · Drone & PID Lab</div>
+  <h1>Hiểu PID và điều khiển drone bằng cách <em>tự chạy mô phỏng</em></h1>
+  <p class="mut">Bộ notebook Python (numpy + matplotlib) có giải thích tiếng Việt, đi kèm hình hoạt hình như trên kênh. Kéo thanh trượt Kp, Ki, Kd — nhìn drone phản ứng ngay.</p>
+
+  <img src="output/01_dap_ung_mac_dinh.png" alt="Đồ thị đáp ứng độ cao và lực đẩy khi dùng PID trong bài mẫu">
+
+  <h2>Bộ đầy đủ dự kiến gồm 8 bài</h2>
+  <div class="card">
+    <ol class="lessons">
+      <li>PID giữ độ cao drone 1 trục <span class="free">MIỄN PHÍ</span></li>
+      <li>Chỉnh PID có phương pháp: Ziegler–Nichols, thử bước, đọc đồ thị</li>
+      <li>Nhiễu cảm biến, lọc thông thấp và vì sao Kd “hét” động cơ</li>
+      <li>Lọc Kalman 1D — từ trực giác đến code</li>
+      <li>Lọc bù (complementary) cho IMU: góc nghiêng từ gyro + gia tốc kế</li>
+      <li>Mô hình động cơ BLDC và cánh quạt: lực đẩy, trễ, bão hòa</li>
+      <li>PID tầng (cascade) cho góc và tốc độ góc</li>
+      <li>Mô phỏng quadcopter 3D: giữ vị trí và bay theo điểm</li>
+    </ol>
+    <p class="mut" style="margin:.8em 0 0">Kèm PDF hướng dẫn và bài tập. Nội dung bài 2–8 đang soạn; danh sách có thể điều chỉnh trước khi phát hành.</p>
+  </div>
+
+  <h2>Dành cho ai?</h2>
+  <div class="card">
+    <p style="margin:0">Sinh viên cơ điện tử / tự động hóa / điện tử, người chơi drone & Arduino muốn hiểu bản chất thay vì chỉ chép thông số. Cần biết Python cơ bản.</p>
+  </div>
+
+  <h2 id="free">Tải bài mẫu miễn phí</h2>
+  <div class="card">
+    <form id="form-free">
+      <label for="email">Email nhận link tải</label>
+      <input id="email" name="email" type="email" required placeholder="ban@vidu.com" autocomplete="email">
+      <label class="chk"><input type="checkbox" name="consent" required> Tôi đồng ý nhận email về Drone & PID Lab (có thể hủy bất cứ lúc nào).</label>
+      <input type="text" name="website" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+      <button class="btn btn-free" type="submit">Gửi bài mẫu cho tôi</button>
+      <div id="msg" role="status"></div>
+    </form>
+  </div>
+
+  <h2 id="buy">Đặt mua sớm</h2>
+  <div class="card">
+    <div><span class="price">149.000₫</span><span class="old">199.000₫</span></div>
+    <p class="mut">Giá mở bán sớm cho người đặt trước khi phát hành bộ đầy đủ. Thanh toán chuyển khoản QR (VietQR).</p>
+    <!-- PAYOS: nút gọi Apps Script (?buy=1) tạo link payOS rồi chuyển sang trang thanh toán. Bật bằng PAY_ENABLED. -->
+    <form id="form-buy">
+      <label for="buy-email">Email nhận link tải sau khi thanh toán</label>
+      <input id="buy-email" name="email" type="email" required placeholder="ban@vidu.com" autocomplete="email">
+      <button id="btn-buy" class="btn btn-buy" type="submit" disabled>Đặt mua sớm — sắp mở</button>
+    </form>
+    <div id="msg-buy" class="mut" role="status">Chưa nhận thanh toán. Để lại email ở trên để được báo khi mở.</div>
+  </div>
+
+  <h2>Câu hỏi thường gặp</h2>
+  <details><summary>Cần cài gì để chạy?</summary><p>Python 3.10+, numpy, matplotlib, Jupyter (hoặc VS Code). Có hướng dẫn cài trong bài mẫu.</p></details>
+  <details><summary>Nhận hàng thế nào?</summary><p>Sau khi thanh toán, link tải được gửi tự động qua email.</p></details>
+  <details><summary>Có dùng được cho drone thật không?</summary><p>Đây là tài liệu học tập với mô hình đã đơn giản hóa. Thông số tìm được trong mô phỏng cần được kiểm chứng an toàn trên phần cứng thật.</p></details>
+  <details><summary>Hoàn tiền?</summary><p>Chính sách hoàn tiền sẽ được công bố khi mở bán.</p></details>
+
+  <footer>
+    © @roboticsvn · Tài liệu phục vụ học tập, không cam kết kết quả học tập, việc làm hay thu nhập.<br>
+    Email chỉ dùng để gửi tài liệu và thông báo về sản phẩm này.
+  </footer>
+</main>
+
+<script>
+  // Điền URL web app (Apps Script) sau khi được duyệt deploy. Để trống = chế độ xem thử trên máy.
+  const SIGNUP_URL = "";
+  // Bật thanh toán payOS (cần SIGNUP_URL + Script Properties payOS) — chỉ khi sếp duyệt mở bán.
+  const PAY_ENABLED = false;
+
+  const buyBtn = document.getElementById("btn-buy"), buyMsg = document.getElementById("msg-buy");
+  if (PAY_ENABLED && SIGNUP_URL) {
+    buyBtn.disabled = false;
+    buyBtn.textContent = "Đặt mua sớm — 149.000₫";
+    buyMsg.textContent = "Thanh toán qua payOS. Link tải gửi tự động qua email sau khi chuyển khoản thành công.";
+  }
+  const kq = new URLSearchParams(location.search).get("thanhtoan");
+  if (kq === "ok") buyMsg.textContent = "Cảm ơn bạn! Khi payOS xác nhận chuyển khoản, link tải sẽ tới email trong vài phút (kiểm tra cả Spam).";
+  if (kq === "huy") buyMsg.textContent = "Bạn đã hủy thanh toán. Có thể đặt lại bất cứ lúc nào.";
+
+  document.getElementById("form-buy").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    if (!(PAY_ENABLED && SIGNUP_URL)) return;
+    const q = new URLSearchParams({
+      buy: "1",
+      email: ev.target.email.value.trim(),
+      source: new URLSearchParams(location.search).get("src") || "direct",
+    });
+    buyBtn.disabled = true;
+    buyMsg.textContent = "Đang tạo link thanh toán…";
+    location.href = SIGNUP_URL + "?" + q;   // Apps Script tạo link payOS rồi chuyển sang checkoutUrl
+  });
+
+  document.getElementById("form-free").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const f = ev.target, msg = document.getElementById("msg");
+    const data = new URLSearchParams({
+      email: f.email.value.trim(),
+      website: f.website.value,          // bẫy bot, người thật để trống
+      source: new URLSearchParams(location.search).get("src") || "direct",
+    });
+    if (!SIGNUP_URL) {
+      msg.textContent = "Bản xem thử trên máy: chưa kết nối máy chủ, chưa gửi email.";
+      return;
+    }
+    msg.textContent = "Đang gửi…";
+    try {
+      // no-cors: Apps Script không trả header CORS; coi như thành công nếu không lỗi mạng
+      await fetch(SIGNUP_URL, { method: "POST", mode: "no-cors", body: data });
+      msg.textContent = "Đã gửi! Kiểm tra hộp thư (cả mục Quảng cáo/Spam) trong vài phút.";
+      f.reset();
+    } catch (e) {
+      msg.textContent = "Lỗi mạng, vui lòng thử lại.";
+    }
+  });
+</script>
+</body>
+</html>
